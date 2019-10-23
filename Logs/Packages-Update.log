@@ -1,0 +1,12 @@
+
+=== Wed Oct 23 05:52:02 2019
+
+Packages were changed.
+Update Mode: mergeDefaultDependencies
+
+The following packages were added:
+  com.unity.xr.management@3.0.3
+The following packages were updated:
+  com.unity.ide.vscode from version 1.0.7 to 1.1.2
+  com.unity.test-framework from version 1.0.17 to 1.1.2
+  com.unity.timeline from version 1.1.0 to 1.2.2
