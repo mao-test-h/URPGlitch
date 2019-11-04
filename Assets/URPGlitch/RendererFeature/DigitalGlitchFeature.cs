@@ -7,7 +7,7 @@ namespace UnityEngine.Rendering.Universal.Glitch
 {
     using Random = Unity.Mathematics.Random;
 
-    sealed class DigitalGlitchFeature : ScriptableRendererFeature
+    public sealed class DigitalGlitchFeature : ScriptableRendererFeature
     {
         sealed class CustomRenderPass : ScriptableRenderPass
         {
@@ -15,10 +15,10 @@ namespace UnityEngine.Rendering.Universal.Glitch
             const string FinalBlitPassTag = "Final Blit Pass";
 
             // Material Properties
-            static readonly int MainTex = Shader.PropertyToID("_MainTex");
-            static readonly int NoiseTex = Shader.PropertyToID("_NoiseTex");
-            static readonly int TrashTex = Shader.PropertyToID("_TrashTex");
-            static readonly int Intensity = Shader.PropertyToID("_Intensity");
+            static readonly int MainTexID = Shader.PropertyToID("_MainTex");
+            static readonly int NoiseTexID = Shader.PropertyToID("_NoiseTex");
+            static readonly int TrashTexID = Shader.PropertyToID("_TrashTex");
+            static readonly int IntensityID = Shader.PropertyToID("_Intensity");
 
             readonly DigitalGlitchFeature _glitchFeature;
             Random _random;
@@ -28,8 +28,6 @@ namespace UnityEngine.Rendering.Universal.Glitch
             RenderTexture _trashFrame1;
             RenderTexture _trashFrame2;
 
-            Material GlitchMaterial => _glitchFeature._material;
-
             Color RandomColor
             {
                 get
@@ -37,6 +35,14 @@ namespace UnityEngine.Rendering.Universal.Glitch
                     var r = _random.NextFloat4();
                     return new Color(r.x, r.y, r.z, r.w);
                 }
+            }
+
+            Material GlitchMaterial => _glitchFeature.MaterialInstance;
+
+            public float Intensity
+            {
+                get => GlitchMaterial.GetFloat(IntensityID);
+                set => GlitchMaterial.SetFloat(IntensityID, value);
             }
 
             public CustomRenderPass(DigitalGlitchFeature glitchFeature)
@@ -56,9 +62,7 @@ namespace UnityEngine.Rendering.Universal.Glitch
             public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
             {
                 if (GlitchMaterial == null) return;
-
-                var intensity = GlitchMaterial.GetFloat(Intensity);
-                if (_random.NextFloat() > math.lerp(0.9f, 0.5f, intensity))
+                if (_random.NextFloat() > math.lerp(0.9f, 0.5f, Intensity))
                 {
                     UpdateNoiseTexture();
                 }
@@ -87,9 +91,9 @@ namespace UnityEngine.Rendering.Universal.Glitch
                 if (frameCount % 73 == 0) cmd.Blit(activeTexture, _trashFrame2);
 
                 // Materialに必要な情報を渡しつつ書き込み.
-                material.SetTexture(MainTex, _mainTexture);
-                material.SetTexture(NoiseTex, _noiseTexture);
-                material.SetTexture(TrashTex, _random.NextFloat() > 0.5f ? _trashFrame1 : _trashFrame2);
+                material.SetTexture(MainTexID, _mainTexture);
+                material.SetTexture(NoiseTexID, _noiseTexture);
+                material.SetTexture(TrashTexID, _random.NextFloat() > 0.5f ? _trashFrame1 : _trashFrame2);
                 cmd.Blit(_mainTexture, camera.activeTexture, material);
 
                 // CommandBufferの実行.
@@ -136,12 +140,18 @@ namespace UnityEngine.Rendering.Universal.Glitch
         [SerializeField] Material _material = default;
         CustomRenderPass _scriptablePass;
 
+        public float Intensity
+        {
+            get => _scriptablePass.Intensity;
+            set => _scriptablePass.Intensity = value;
+        }
+
         public override void Create()
         {
             _scriptablePass = new CustomRenderPass(this)
             {
                 // Configures where the render pass should be injected.
-                renderPassEvent = RenderPassEvent.AfterRendering + 1,  // 必ず最後に実行されるように調整.
+                renderPassEvent = RenderPassEvent.AfterRendering + 1, // 必ず最後に実行されるように調整.
             };
         }
 
@@ -149,5 +159,19 @@ namespace UnityEngine.Rendering.Universal.Glitch
         // This method is called when setting up the renderer once per-camera.
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
             => renderer.EnqueuePass(_scriptablePass);
+
+        Material _materialInstance;
+        Material MaterialInstance
+        {
+            get
+            {
+                if (_materialInstance == null)
+                {
+                    _materialInstance = Instantiate(_material);
+                }
+
+                return _materialInstance;
+            }
+        }
     }
 }
