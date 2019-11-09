@@ -1,7 +1,7 @@
 ﻿// refered to:
 //     https://github.com/keijiro/KinoGlitch.git
-//     Assets/Kino/Glitch/Shader/DigitalGlitch.shader
-Shader "Universal Render Pipeline/Post Effetcs/Glitch/Digital"
+//     Assets/Kino/Glitch/Shader/AnalogGlitch.shader
+Shader "Universal Render Pipeline/Post Effetcs/Glitch/Analog"
 {
     SubShader
     {
@@ -41,9 +41,16 @@ Shader "Universal Render Pipeline/Post Effetcs/Glitch/Digital"
             };
 
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
-            TEXTURE2D(_NoiseTex); SAMPLER(sampler_NoiseTex);
-            TEXTURE2D(_TrashTex); SAMPLER(sampler_TrashTex);
-            float _Intensity;
+
+            float2 _ScanLineJitter; // (displacement, threshold)
+            float2 _VerticalJump;   // (amount, time)
+            float _HorizontalShake;
+            float2 _ColorDrift;     // (amount, time)
+
+            float nrand(float x, float y)
+            {
+                return frac(sin(dot(float2(x, y), float2(12.9898, 78.233))) * 43758.5453);
+            }
 
             Varyings Vertex(Attributes i)
             {
@@ -59,37 +66,33 @@ Shader "Universal Render Pipeline/Post Effetcs/Glitch/Digital"
                 i.uv = float2(i.uv.x, 1.0 - i.uv.y); 
                 #endif
 
-                half4 glitch = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, i.uv);
+                float u = i.uv.x;
+                float v = i.uv.y;
+
+                // Scan line jitter
+                float jitter = nrand(v, _Time.x) * 2 - 1;
+                jitter *= step(_ScanLineJitter.y, abs(jitter)) * _ScanLineJitter.x;
+
+                // Vertical jump
+                float jump = lerp(v, frac(v + _VerticalJump.y), _VerticalJump.x);
+
+                // Horizontal shake
+                float shake = (nrand(_Time.x, 2) - 0.5) * _HorizontalShake;
+
+                // Color drift
+                float drift = sin(jump + _ColorDrift.y) * _ColorDrift.x;
+
+                half4 src1 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, frac(float2(u + jitter + shake, jump)));
                 #ifdef _LINEAR_TO_SRGB_CONVERSION
-                glitch = LinearToSRGB(glitch);
+                src1 = LinearToSRGB(src1);
+                #endif
+                
+                half4 src2 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, frac(float2(u + jitter + shake + drift, jump)));
+                #ifdef _LINEAR_TO_SRGB_CONVERSION
+                src2 = LinearToSRGB(src2);
                 #endif
 
-                float thresh = 1.001 - _Intensity * 1.001;
-                float w_d = step(thresh, pow(abs(glitch.z), 2.5)); // displacement glitch
-                float w_f = step(thresh, pow(abs(glitch.w), 2.5)); // frame glitch
-                float w_c = step(thresh, pow(abs(glitch.z), 3.5)); // color glitch
-
-                // Displacement.
-                float2 uv = frac(i.uv + glitch.xy * w_d);
-
-                half4 source = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
-                #ifdef _LINEAR_TO_SRGB_CONVERSION
-                source = LinearToSRGB(source);
-                #endif
-
-                half4 trash = SAMPLE_TEXTURE2D(_TrashTex, sampler_TrashTex, uv);
-                #ifdef _LINEAR_TO_SRGB_CONVERSION
-                trash = LinearToSRGB(trash);
-                #endif
-
-                // Mix with trash frame.
-                half3 color = lerp(source, trash, w_f).rgb;
-
-                // Shuffle color components.
-                half3 neg = saturate(color.grb + (1 - dot(color, 1)) * 0.5);
-                color = lerp(color, neg, w_c);
-
-                return half4(color, source.a);
+                return half4(src1.r, src2.g, src1.b, 1);
             }
 
             ENDHLSL

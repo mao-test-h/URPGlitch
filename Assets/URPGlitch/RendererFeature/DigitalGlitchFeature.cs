@@ -1,6 +1,7 @@
 ﻿// refered to:
 //     https://github.com/keijiro/KinoGlitch.git
 //     Assets/Kino/Glitch/DigitalGlitch.cs
+
 using Unity.Mathematics;
 
 namespace UnityEngine.Rendering.Universal.Glitch
@@ -38,12 +39,7 @@ namespace UnityEngine.Rendering.Universal.Glitch
             }
 
             Material GlitchMaterial => _glitchFeature.MaterialInstance;
-
-            public float Intensity
-            {
-                get => GlitchMaterial.GetFloat(IntensityID);
-                set => GlitchMaterial.SetFloat(IntensityID, value);
-            }
+            float Intensity => _glitchFeature.Intensity;
 
             public CustomRenderPass(DigitalGlitchFeature glitchFeature)
             {
@@ -91,6 +87,7 @@ namespace UnityEngine.Rendering.Universal.Glitch
                 if (frameCount % 73 == 0) cmd.Blit(activeTexture, _trashFrame2);
 
                 // Materialに必要な情報を渡しつつ書き込み.
+                material.SetFloat(IntensityID, Intensity);
                 material.SetTexture(MainTexID, _mainTexture);
                 material.SetTexture(NoiseTexID, _noiseTexture);
                 material.SetTexture(TrashTexID, _random.NextFloat() > 0.5f ? _trashFrame1 : _trashFrame2);
@@ -139,11 +136,21 @@ namespace UnityEngine.Rendering.Universal.Glitch
 
         [SerializeField] Material _material = default;
         CustomRenderPass _scriptablePass;
+        Material _materialInstance;
 
-        public float Intensity
+        public float Intensity { get; set; } = 0f;
+
+        Material MaterialInstance
         {
-            get => _scriptablePass.Intensity;
-            set => _scriptablePass.Intensity = value;
+            get
+            {
+                if (_materialInstance == null)
+                {
+                    _materialInstance = Instantiate(_material);
+                }
+
+                return _materialInstance;
+            }
         }
 
         public override void Create()
@@ -159,19 +166,5 @@ namespace UnityEngine.Rendering.Universal.Glitch
         // This method is called when setting up the renderer once per-camera.
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
             => renderer.EnqueuePass(_scriptablePass);
-
-        Material _materialInstance;
-        Material MaterialInstance
-        {
-            get
-            {
-                if (_materialInstance == null)
-                {
-                    _materialInstance = Instantiate(_material);
-                }
-
-                return _materialInstance;
-            }
-        }
     }
 }
