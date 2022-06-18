@@ -2,12 +2,8 @@
 //     https://github.com/keijiro/KinoGlitch.git
 //     Assets/Kino/Glitch/DigitalGlitch.cs
 
-using Unity.Mathematics;
-
 namespace UnityEngine.Rendering.Universal.Glitch
 {
-    using Random = Unity.Mathematics.Random;
-
     public sealed class DigitalGlitchFeature : ScriptableRendererFeature
     {
         sealed class CustomRenderPass : ScriptableRenderPass
@@ -22,7 +18,7 @@ namespace UnityEngine.Rendering.Universal.Glitch
             static readonly int IntensityID = Shader.PropertyToID("_Intensity");
 
             readonly DigitalGlitchFeature _glitchFeature;
-            Random _random;
+            System.Random _random;
 
             Texture2D _noiseTexture;
             RenderTexture _mainTexture;
@@ -33,8 +29,11 @@ namespace UnityEngine.Rendering.Universal.Glitch
             {
                 get
                 {
-                    var r = _random.NextFloat4();
-                    return new Color(r.x, r.y, r.z, r.w);
+                    var r = (float)_random.NextDouble();
+                    var g = (float)_random.NextDouble();
+                    var b = (float)_random.NextDouble();
+                    var a = (float)_random.NextDouble();
+                    return new Color(r, g, b, a);
                 }
             }
 
@@ -44,7 +43,7 @@ namespace UnityEngine.Rendering.Universal.Glitch
             public CustomRenderPass(DigitalGlitchFeature glitchFeature)
             {
                 _glitchFeature = glitchFeature;
-                _random = new Random((uint) System.DateTime.Now.Ticks);
+                _random = new System.Random();
 
                 SetUpResources();
                 UpdateNoiseTexture();
@@ -58,7 +57,8 @@ namespace UnityEngine.Rendering.Universal.Glitch
             public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
             {
                 if (GlitchMaterial == null) return;
-                if (_random.NextFloat() > math.lerp(0.9f, 0.5f, Intensity))
+                var r = (float)_random.NextDouble();
+                if (r > Mathf.Lerp(0.9f, 0.5f, Intensity))
                 {
                     UpdateNoiseTexture();
                 }
@@ -87,10 +87,11 @@ namespace UnityEngine.Rendering.Universal.Glitch
                 if (frameCount % 73 == 0) cmd.Blit(activeTexture, _trashFrame2);
 
                 // Materialに必要な情報を渡しつつ書き込み.
+                var r = (float)_random.NextDouble();
                 material.SetFloat(IntensityID, Intensity);
                 material.SetTexture(MainTexID, _mainTexture);
                 material.SetTexture(NoiseTexID, _noiseTexture);
-                material.SetTexture(TrashTexID, _random.NextFloat() > 0.5f ? _trashFrame1 : _trashFrame2);
+                material.SetTexture(TrashTexID, r > 0.5f ? _trashFrame1 : _trashFrame2);
                 cmd.Blit(_mainTexture, camera.activeTexture, material);
 
                 // CommandBufferの実行.
@@ -121,7 +122,8 @@ namespace UnityEngine.Rendering.Universal.Glitch
                 {
                     for (var x = 0; x < _noiseTexture.width; x++)
                     {
-                        if (_random.NextFloat() > 0.89f)
+                        var r = (float)_random.NextDouble();
+                        if (r > 0.89f)
                         {
                             color = RandomColor;
                         }
