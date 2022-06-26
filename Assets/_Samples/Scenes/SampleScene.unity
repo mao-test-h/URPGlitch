@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.18144794, g: 0.2270628, b: 0.3072613, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -379,11 +379,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e759d4515f7b53d418fd4361ee4b205d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _digitalGlitchFeature: {fileID: 6274622047083885868, guid: bf53d832cd3d8e048950e26c0c96e1f3,
-    type: 2}
   _analogGlitchFeature: {fileID: -7781856633383133533, guid: bf53d832cd3d8e048950e26c0c96e1f3,
     type: 2}
-  _intensity: 0
   _scanLineJitter: 0
   _verticalJump: 0
   _horizontalShake: 0
@@ -505,7 +502,7 @@ MonoBehaviour:
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
   m_Cameras: []
-  m_RendererIndex: 1
+  m_RendererIndex: -1
   m_VolumeLayerMask:
     serializedVersion: 2
     m_Bits: 1

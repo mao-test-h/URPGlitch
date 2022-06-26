@@ -5,11 +5,7 @@ namespace Samples
 {
     sealed class SampleController : MonoBehaviour
     {
-        [SerializeField] DigitalGlitchFeature _digitalGlitchFeature = default;
         [SerializeField] AnalogGlitchFeature _analogGlitchFeature = default;
-
-        [Header("Digital")]
-        [SerializeField, Range(0f, 1f)] float _intensity = default;
 
         [Header("Analog")]
         [SerializeField, Range(0f, 1f)] float _scanLineJitter = default;
@@ -19,8 +15,6 @@ namespace Samples
 
         void Update()
         {
-            _digitalGlitchFeature.Intensity = _intensity;
-
             _analogGlitchFeature.ScanLineJitter = _scanLineJitter;
             _analogGlitchFeature.VerticalJump = _verticalJump;
             _analogGlitchFeature.HorizontalShake = _horizontalShake;
