@@ -71,5 +71,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Active: 1
   shader: {fileID: 4800000, guid: f543b3af2e0e5044caa979485a566d18, type: 3}
-  timing: 1
-  applyToSceneView: 1

@@ -6,6 +6,8 @@ namespace UnityEngine.Rendering.Universal.Glitch
     [VolumeComponentMenu("Digital Glitch")]
     public class DigitalGlitchVolume : VolumeComponent
     {
-        public ClampedFloatParameter intensity = new ClampedFloatParameter(0f, 0f, 1f);
+        public ClampedFloatParameter intensity = new(0f, 0f, 1f);
+
+        public bool IsActive => intensity.value > 0f;
     }
 }

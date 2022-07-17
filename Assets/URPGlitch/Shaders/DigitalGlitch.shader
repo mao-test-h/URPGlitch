@@ -55,10 +55,6 @@ Shader "Universal Render Pipeline/Post Effetcs/Glitch/Digital"
 
             half4 Fragment(Varyings i) : SV_Target
             {
-                #if UNITY_UV_STARTS_AT_TOP
-                i.uv = float2(i.uv.x, 1.0 - i.uv.y);
-                #endif
-
                 float4 glitch = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, i.uv);
 
                 float thresh = 1.001 - _Intensity * 1.001;
