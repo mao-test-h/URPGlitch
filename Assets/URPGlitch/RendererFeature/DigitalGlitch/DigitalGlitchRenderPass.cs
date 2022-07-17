@@ -89,29 +89,24 @@ namespace UnityEngine.Rendering.Universal.Glitch
                 return;
             }
 
-            // コマンドバッファの取得
+            // TODO: Swap Bufferの検証
             var cmd = CommandBufferPool.Get(RenderPassName);
             cmd.Clear();
             using (new ProfilingScope(cmd, _profilingSampler))
             {
                 var source = renderingData.cameraData.renderer.cameraColorTarget;
 
-                // カメラのターゲットと同じDescription(Depthは無し)でRenderTextureを取得
                 var cameraTargetDescriptor = renderingData.cameraData.cameraTargetDescriptor;
                 cameraTargetDescriptor.depthBufferBits = 0;
                 cmd.GetTemporaryRT(_mainFrame.id, cameraTargetDescriptor);
                 cmd.GetTemporaryRT(_trashFrame1.id, cameraTargetDescriptor);
                 cmd.GetTemporaryRT(_trashFrame2.id, cameraTargetDescriptor);
-
-                // 現在のレンダリング結果を保持 (Materialに元絵も渡す必要があるので変換用とTextureの2枚)
                 cmd.Blit(source, _mainFrame.Identifier());
 
-                // 各トラッシュフレームを一定間隔で更新
                 var frameCount = Time.frameCount;
                 if (frameCount % 13 == 0) cmd.Blit(source, _trashFrame1.Identifier());
                 if (frameCount % 73 == 0) cmd.Blit(source, _trashFrame2.Identifier());
 
-                // Materialに必要な情報を渡しつつ書き込み.
                 var r = (float)_random.NextDouble();
                 var blitTrashHandle = r > 0.5f ? _trashFrame1 : _trashFrame2;
                 _glitchMaterial.SetFloat(IntensityID, _volume.intensity.value);
