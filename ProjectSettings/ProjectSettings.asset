@@ -154,7 +154,10 @@ PlayerSettings:
   resetResolutionOnWindowResize: 0
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
-  applicationIdentifier: {}
+  applicationIdentifier:
+    Android: com.DefaultCompany.URPGlitch
+    Standalone: com.DefaultCompany.URPGlitch
+    iPhone: com.DefaultCompany.URPGlitch
   buildNumber:
     Standalone: 0
     iPhone: 0
