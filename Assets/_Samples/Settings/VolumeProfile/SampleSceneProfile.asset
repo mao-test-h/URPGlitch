@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d536c364ebc24dd6b769ef6affde936a, type: 3}
   m_Name: DigitalGlitchVolume
   m_EditorClassIdentifier: 
-  active: 0
+  active: 1
   intensity:
     m_OverrideState: 1
-    m_Value: 0.5
+    m_Value: 0
 --- !u!114 &-7893295128165547882
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -133,13 +133,13 @@ MonoBehaviour:
   active: 1
   scanLineJitter:
     m_OverrideState: 1
-    m_Value: 0.5
+    m_Value: 0
   verticalJump:
     m_OverrideState: 1
-    m_Value: 0.5
+    m_Value: 0
   horizontalShake:
     m_OverrideState: 1
-    m_Value: 0.5
+    m_Value: 0
   colorDrift:
     m_OverrideState: 1
-    m_Value: 0.5
+    m_Value: 0
