@@ -3,12 +3,15 @@
 //     Assets/Kino/Glitch/AnalogGlitch.cs
 
 using System;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
-namespace UnityEngine.Rendering.Universal.Glitch
+namespace URPGlitch.Runtime.AnalogGlitch
 {
     sealed class AnalogGlitchRenderPass : ScriptableRenderPass, IDisposable
     {
-        const string RenderPassName = "AnalogGlitch Render Pass";
+        const string RenderPassName = "AnalogGlitch RenderPass";
 
         // Material Properties
         static readonly int MainTexID = Shader.PropertyToID("_MainTex");

@@ -1,17 +1,22 @@
 ﻿// refered to:
 //     https://github.com/keijiro/KinoGlitch.git
-//     Assets/Kino/Glitch/AnalogGlitch.cs
+//     Assets/Kino/Glitch/DigitalGlitch.cs
 
-namespace UnityEngine.Rendering.Universal.Glitch
+using System;
+using UnityEngine;
+using UnityEngine.Rendering.Universal;
+
+namespace URPGlitch.Runtime.DigitalGlitch
 {
-    public sealed class AnalogGlitchFeature : ScriptableRendererFeature
+    [Serializable]
+    public sealed class DigitalGlitchFeature : ScriptableRendererFeature
     {
         [SerializeField] Shader shader;
-        AnalogGlitchRenderPass _scriptablePass;
+        DigitalGlitchRenderPass _scriptablePass;
 
         public override void Create()
         {
-            _scriptablePass = new AnalogGlitchRenderPass(shader);
+            _scriptablePass = new DigitalGlitchRenderPass(shader);
         }
 
         // Here you can inject one or multiple render passes in the renderer.
