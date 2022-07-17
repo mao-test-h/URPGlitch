@@ -131,8 +131,8 @@ namespace UnityEngine.Rendering.Universal.Glitch
 
                     // 各トラッシュフレームを一定間隔で更新
                     var frameCount = Time.frameCount;
-                    if (frameCount % 13 == 0) Blit(cmd, source, _trashFrame1.Identifier());
-                    if (frameCount % 73 == 0) Blit(cmd, source, _trashFrame2.Identifier());
+                    if (frameCount % 13 == 0) cmd.Blit(source, _trashFrame1.Identifier());
+                    if (frameCount % 73 == 0) cmd.Blit(source, _trashFrame2.Identifier());
 
                     // Materialに必要な情報を渡しつつ書き込み.
                     var r = (float)_random.NextDouble();
