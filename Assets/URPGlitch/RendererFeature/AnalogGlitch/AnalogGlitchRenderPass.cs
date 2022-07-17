@@ -11,6 +11,7 @@ namespace UnityEngine.Rendering.Universal.Glitch
         const string RenderPassName = "AnalogGlitch Render Pass";
 
         // Material Properties
+        static readonly int MainTexID = Shader.PropertyToID("_MainTex");
         static readonly int ScanLineJitterID = Shader.PropertyToID("_ScanLineJitter");
         static readonly int VerticalJumpID = Shader.PropertyToID("_VerticalJump");
         static readonly int HorizontalShakeID = Shader.PropertyToID("_HorizontalShake");
@@ -20,6 +21,7 @@ namespace UnityEngine.Rendering.Universal.Glitch
         readonly Material _glitchMaterial;
         readonly AnalogGlitchVolume _volume;
 
+        RenderTargetHandle _mainFrame;
         float _verticalJumpTime;
 
         bool isActive =>
@@ -35,6 +37,8 @@ namespace UnityEngine.Rendering.Universal.Glitch
 
             var volumeStack = VolumeManager.instance.stack;
             _volume = volumeStack.GetComponent<AnalogGlitchVolume>();
+
+            _mainFrame.Init("_MainFrame");
         }
 
         public void Dispose()
@@ -55,11 +59,17 @@ namespace UnityEngine.Rendering.Universal.Glitch
                 return;
             }
 
+            // TODO: Swap Bufferの検証
             var cmd = CommandBufferPool.Get(RenderPassName);
             cmd.Clear();
             using (new ProfilingScope(cmd, _profilingSampler))
             {
                 var source = renderingData.cameraData.renderer.cameraColorTarget;
+
+                var cameraTargetDescriptor = renderingData.cameraData.cameraTargetDescriptor;
+                cameraTargetDescriptor.depthBufferBits = 0;
+                cmd.GetTemporaryRT(_mainFrame.id, cameraTargetDescriptor);
+                cmd.Blit(source, _mainFrame.Identifier());
 
                 var scanLineJitter = _volume.scanLineJitter.value;
                 var verticalJump = _volume.verticalJump.value;
@@ -79,7 +89,9 @@ namespace UnityEngine.Rendering.Universal.Glitch
                 var cd = new Vector2(colorDrift * 0.04f, Time.time * 606.11f);
                 _glitchMaterial.SetVector(ColorDriftID, cd);
 
-                Blit(cmd, ref renderingData, _glitchMaterial);
+                cmd.SetGlobalTexture(MainTexID, _mainFrame.Identifier());
+                cmd.Blit(_mainFrame.Identifier(), source, _glitchMaterial);
+                cmd.ReleaseTemporaryRT(_mainFrame.id);
 
                 context.ExecuteCommandBuffer(cmd);
                 CommandBufferPool.Release(cmd);

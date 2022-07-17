@@ -34,8 +34,8 @@ Shader "Universal Render Pipeline/Post Effetcs/Glitch/Analog"
                 half2 uv : TEXCOORD0;
             };
 
-            TEXTURE2D(_SourceTex);
-            SAMPLER(sampler_SourceTex);
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
 
             float2 _ScanLineJitter; // (displacement, threshold)
             float2 _VerticalJump; // (amount, time)
@@ -73,9 +73,8 @@ Shader "Universal Render Pipeline/Post Effetcs/Glitch/Analog"
                 // Color drift
                 float drift = sin(jump + _ColorDrift.y) * _ColorDrift.x;
 
-                half4 src1 = SAMPLE_TEXTURE2D(_SourceTex, sampler_SourceTex, frac(float2(u + jitter + shake, jump)));
-                half4 src2 = SAMPLE_TEXTURE2D(_SourceTex, sampler_SourceTex, frac(float2(u + jitter + shake + drift, jump)));
-
+                half4 src1 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, frac(float2(u + jitter + shake, jump)));
+                half4 src2 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, frac(float2(u + jitter + shake + drift, jump)));
                 return half4(src1.r, src2.g, src1.b, 1);
             }
             ENDHLSL
