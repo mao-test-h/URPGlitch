@@ -10,21 +10,17 @@ namespace UnityEngine.Rendering.Universal.Glitch
     public sealed class DigitalGlitchFeature : ScriptableRendererFeature
     {
         [SerializeField] Shader shader;
-        [SerializeField] PostprocessTiming timing = PostprocessTiming.AfterOpaque;
-        [SerializeField] bool applyToSceneView = true;
-
         DigitalGlitchRenderPass _scriptablePass;
 
         public override void Create()
         {
-            _scriptablePass = new DigitalGlitchRenderPass(applyToSceneView, shader);
+            _scriptablePass = new DigitalGlitchRenderPass(shader);
         }
 
         // Here you can inject one or multiple render passes in the renderer.
         // This method is called when setting up the renderer once per-camera.
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            _scriptablePass.Setup(renderer.cameraColorTarget, timing);
             renderer.EnqueuePass(_scriptablePass);
         }
 
@@ -35,7 +31,7 @@ namespace UnityEngine.Rendering.Universal.Glitch
 
         sealed class DigitalGlitchRenderPass : ScriptableRenderPass, IDisposable
         {
-            const string RenderPassName = nameof(DigitalGlitchRenderPass);
+            const string RenderPassName = "DigitalGlitch Render Pass";
 
             // Material Properties
             static readonly int MainTexID = Shader.PropertyToID("_MainTex");
@@ -44,23 +40,25 @@ namespace UnityEngine.Rendering.Universal.Glitch
             static readonly int IntensityID = Shader.PropertyToID("_Intensity");
 
             readonly ProfilingSampler _profilingSampler;
-
-            readonly bool _applyToSceneView;
             readonly System.Random _random;
+
             readonly Material _glitchMaterial;
             readonly Texture2D _noiseTexture;
+            readonly DigitalGlitchVolume _volume = null;
 
-            RenderTargetIdentifier _cameraColorTarget;
-            RenderTargetHandle _afterPostProcessTexture;
             RenderTargetHandle _mainFrame;
             RenderTargetHandle _trashFrame1;
             RenderTargetHandle _trashFrame2;
-            DigitalGlitchVolume _volume;
 
-            public DigitalGlitchRenderPass(bool applyToSceneView, Shader shader)
+            bool isActive =>
+                _glitchMaterial != null &&
+                _volume != null &&
+                _volume.IsActive;
+
+            public DigitalGlitchRenderPass(Shader shader)
             {
+                renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
                 _profilingSampler = new ProfilingSampler(RenderPassName);
-                _applyToSceneView = applyToSceneView;
                 _random = new System.Random();
                 _glitchMaterial = CoreUtils.CreateEngineMaterial(shader);
 
@@ -71,12 +69,12 @@ namespace UnityEngine.Rendering.Universal.Glitch
                     filterMode = FilterMode.Point
                 };
 
-                // RenderPassEvent.AfterRenderingではポストエフェクトを掛けた後のカラーテクスチャがこの名前で取得できる
-                _afterPostProcessTexture.Init("_AfterPostProcessTexture");
+                var volumeStack = VolumeManager.instance.stack;
+                _volume = volumeStack.GetComponent<DigitalGlitchVolume>();
+
                 _mainFrame.Init("_MainFrame");
                 _trashFrame1.Init("_TrashFrame1");
                 _trashFrame2.Init("_TrashFrame2");
-
                 UpdateNoiseTexture();
             }
 
@@ -86,22 +84,14 @@ namespace UnityEngine.Rendering.Universal.Glitch
                 CoreUtils.Destroy(_noiseTexture);
             }
 
-            public void Setup(RenderTargetIdentifier cameraColorTarget, PostprocessTiming timing)
-            {
-                _cameraColorTarget = cameraColorTarget;
-                renderPassEvent = GetRenderPassEvent(timing);
-
-                var volumeStack = VolumeManager.instance.stack;
-                _volume = volumeStack.GetComponent<DigitalGlitchVolume>();
-            }
-
-
             // This method is called by the renderer before executing the render pass.
             // Override this method if you need to to configure render targets and their clear state, and to create temporary render target textures.
             // If a render pass doesn't override this method, this render pass renders to the active Camera's render target.
             // You should never call CommandBuffer.SetRenderTarget. Instead call <c>ConfigureTarget</c> and <c>ConfigureClear</c>.
             public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
             {
+                if (!isActive) return;
+
                 var r = (float)_random.NextDouble();
                 if (r > Mathf.Lerp(0.9f, 0.5f, _volume.intensity.value))
                 {
@@ -115,35 +105,31 @@ namespace UnityEngine.Rendering.Universal.Glitch
             // You don't have to call ScriptableRenderContext.submit, the render pipeline will call it at specific points in the pipeline.
             public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
             {
-                if (_glitchMaterial == null) return;
-                if (!renderingData.cameraData.postProcessEnabled) return;
-                if (!_applyToSceneView && renderingData.cameraData.cameraType == CameraType.SceneView) return;
+                var isPostProcessEnabled = renderingData.cameraData.postProcessEnabled;
+                var isSceneViewCamera = renderingData.cameraData.isSceneViewCamera;
+                if (!isActive || !isPostProcessEnabled || isSceneViewCamera)
+                {
+                    return;
+                }
 
                 // コマンドバッファの取得
                 var cmd = CommandBufferPool.Get(RenderPassName);
                 cmd.Clear();
-
-                // TODO: まだ動いていない
                 using (new ProfilingScope(cmd, _profilingSampler))
                 {
-                    // `renderPassEvent`が`AfterRendering`の場合には
-                    // カメラのカラーターゲットではなく`_AfterPostProcessTexture`を使う
-                    var source = (renderPassEvent == RenderPassEvent.AfterRendering
-                                  && renderingData.cameraData.resolveFinalTarget)
-                        ? _afterPostProcessTexture.Identifier()
-                        : _cameraColorTarget;
+                    var source = renderingData.cameraData.renderer.cameraColorTarget;
 
-                    // カメラのターゲットと同じDescription(Depthは無し)のRenderTextureを取得
-                    var tempTargetDescriptor = renderingData.cameraData.cameraTargetDescriptor;
-                    tempTargetDescriptor.depthBufferBits = 0;
-                    cmd.GetTemporaryRT(_mainFrame.id, tempTargetDescriptor);
-                    cmd.GetTemporaryRT(_trashFrame1.id, tempTargetDescriptor);
-                    cmd.GetTemporaryRT(_trashFrame2.id, tempTargetDescriptor);
+                    // カメラのターゲットと同じDescription(Depthは無し)でRenderTextureを取得
+                    var cameraTargetDescriptor = renderingData.cameraData.cameraTargetDescriptor;
+                    cameraTargetDescriptor.depthBufferBits = 0;
+                    cmd.GetTemporaryRT(_mainFrame.id, cameraTargetDescriptor);
+                    cmd.GetTemporaryRT(_trashFrame1.id, cameraTargetDescriptor);
+                    cmd.GetTemporaryRT(_trashFrame2.id, cameraTargetDescriptor);
 
                     // 現在のレンダリング結果を保持 (Materialに元絵も渡す必要があるので変換用とTextureの2枚)
-                    Blit(cmd, source, _mainFrame.Identifier());
+                    cmd.Blit(source, _mainFrame.Identifier());
 
-                    // Update trash frames on a constant interval.
+                    // 各トラッシュフレームを一定間隔で更新
                     var frameCount = Time.frameCount;
                     if (frameCount % 13 == 0) Blit(cmd, source, _trashFrame1.Identifier());
                     if (frameCount % 73 == 0) Blit(cmd, source, _trashFrame2.Identifier());
@@ -155,7 +141,8 @@ namespace UnityEngine.Rendering.Universal.Glitch
                     _glitchMaterial.SetTexture(NoiseTexID, _noiseTexture);
                     cmd.SetGlobalTexture(MainTexID, _mainFrame.Identifier());
                     cmd.SetGlobalTexture(TrashTexID, blitTrashHandle.Identifier());
-                    Blit(cmd, _mainFrame.Identifier(), source, _glitchMaterial);
+
+                    cmd.Blit(_mainFrame.Identifier(), source, _glitchMaterial);
 
                     cmd.ReleaseTemporaryRT(_mainFrame.id);
                     cmd.ReleaseTemporaryRT(_trashFrame1.id);
@@ -163,21 +150,6 @@ namespace UnityEngine.Rendering.Universal.Glitch
 
                     context.ExecuteCommandBuffer(cmd);
                     CommandBufferPool.Release(cmd);
-                }
-            }
-
-            RenderPassEvent GetRenderPassEvent(PostprocessTiming postprocessTiming)
-            {
-                switch (postprocessTiming)
-                {
-                    case PostprocessTiming.AfterOpaque:
-                        return RenderPassEvent.AfterRenderingSkybox;
-                    case PostprocessTiming.BeforePostprocess:
-                        return RenderPassEvent.BeforeRenderingPostProcessing;
-                    case PostprocessTiming.AfterPostprocess:
-                        return RenderPassEvent.AfterRendering;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(postprocessTiming), postprocessTiming, null);
                 }
             }
 
