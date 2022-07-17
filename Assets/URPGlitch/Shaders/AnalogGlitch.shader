@@ -1,7 +1,7 @@
 ﻿// refered to:
 //     https://github.com/keijiro/KinoGlitch.git
 //     Assets/Kino/Glitch/Shader/AnalogGlitch.shader
-Shader "Universal Render Pipeline/Post Effetcs/Glitch/Analog"
+Shader "URPGlitch/RenderFeature/Analog"
 {
     SubShader
     {

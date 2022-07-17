@@ -3,12 +3,15 @@
 //     Assets/Kino/Glitch/DigitalGlitch.cs
 
 using System;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
-namespace UnityEngine.Rendering.Universal.Glitch
+namespace URPGlitch.Runtime.DigitalGlitch
 {
     sealed class DigitalGlitchRenderPass : ScriptableRenderPass, IDisposable
     {
-        const string RenderPassName = "DigitalGlitch Render Pass";
+        const string RenderPassName = "DigitalGlitch RenderPass";
 
         // Material Properties
         static readonly int MainTexID = Shader.PropertyToID("_MainTex");

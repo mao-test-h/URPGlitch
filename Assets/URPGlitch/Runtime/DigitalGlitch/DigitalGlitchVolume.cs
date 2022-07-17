@@ -1,6 +1,7 @@
 using System;
+using UnityEngine.Rendering;
 
-namespace UnityEngine.Rendering.Universal.Glitch
+namespace URPGlitch.Runtime.DigitalGlitch
 {
     [Serializable]
     [VolumeComponentMenu("Digital Glitch")]

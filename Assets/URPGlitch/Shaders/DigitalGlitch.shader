@@ -1,7 +1,7 @@
 ﻿// refered to:
 //     https://github.com/keijiro/KinoGlitch.git
 //     Assets/Kino/Glitch/Shader/DigitalGlitch.shader
-Shader "Universal Render Pipeline/Post Effetcs/Glitch/Digital"
+Shader "URPGlitch/RenderFeature//Digital"
 {
     SubShader
     {
