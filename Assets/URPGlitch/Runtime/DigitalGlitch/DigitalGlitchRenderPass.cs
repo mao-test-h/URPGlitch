@@ -122,10 +122,10 @@ namespace URPGlitch.Runtime.DigitalGlitch
                 cmd.ReleaseTemporaryRT(_mainFrame.id);
                 cmd.ReleaseTemporaryRT(_trashFrame1.id);
                 cmd.ReleaseTemporaryRT(_trashFrame2.id);
-
-                context.ExecuteCommandBuffer(cmd);
-                CommandBufferPool.Release(cmd);
             }
+
+            context.ExecuteCommandBuffer(cmd);
+            CommandBufferPool.Release(cmd);
         }
 
         void UpdateNoiseTexture()

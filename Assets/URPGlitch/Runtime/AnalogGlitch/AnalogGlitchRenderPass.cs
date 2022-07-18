@@ -95,10 +95,10 @@ namespace URPGlitch.Runtime.AnalogGlitch
                 cmd.SetGlobalTexture(MainTexID, _mainFrame.Identifier());
                 cmd.Blit(_mainFrame.Identifier(), source, _glitchMaterial);
                 cmd.ReleaseTemporaryRT(_mainFrame.id);
-
-                context.ExecuteCommandBuffer(cmd);
-                CommandBufferPool.Release(cmd);
             }
+
+            context.ExecuteCommandBuffer(cmd);
+            CommandBufferPool.Release(cmd);
         }
     }
 }
