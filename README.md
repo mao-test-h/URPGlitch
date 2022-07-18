@@ -20,14 +20,14 @@ https://user-images.githubusercontent.com/17098415/179404306-01f9a32f-7347-4523-
 
 Please add the following URL to `Package Manager -> [Add package from git URL...]`.
 
-> `https://github.com/mao-test-h/URPGlitch.git?path=Assets/URPGlitch#feature/upgrade_urp12`
+> `https://github.com/mao-test-h/URPGlitch.git?path=Assets/URPGlitch`
 
 or add the following URL to `Package/manifest.json -> dependencies`.
 
 ```json
 {
   "dependencies": {
-    "com.mao-test-h.urp-glitch": "https://github.com/mao-test-h/URPGlitch.git?path=Assets/URPGlitch#feature/upgrade_urp12",
+    "com.mao-test-h.urp-glitch": "https://github.com/mao-test-h/URPGlitch.git?path=Assets/URPGlitch",
   }
 }
 ```
