@@ -112,8 +112,8 @@ namespace URPGlitch.Runtime.DigitalGlitch
 
                 var r = (float)_random.NextDouble();
                 var blitTrashHandle = r > 0.5f ? _trashFrame1 : _trashFrame2;
-                _glitchMaterial.SetFloat(IntensityID, _volume.intensity.value);
-                _glitchMaterial.SetTexture(NoiseTexID, _noiseTexture);
+                cmd.SetGlobalFloat(IntensityID, _volume.intensity.value);
+                cmd.SetGlobalTexture(NoiseTexID, _noiseTexture);
                 cmd.SetGlobalTexture(MainTexID, _mainFrame.Identifier());
                 cmd.SetGlobalTexture(TrashTexID, blitTrashHandle.Identifier());
 
