@@ -1,32 +1,26 @@
 ﻿// refered to:
 //     https://github.com/keijiro/KinoGlitch.git
 //     Assets/Kino/Glitch/Shader/AnalogGlitch.shader
-Shader "Universal Render Pipeline/Post Effetcs/Glitch/Analog"
+Shader "URPGlitch/RenderFeature/Analog"
 {
     SubShader
     {
-        Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline"}
+        Tags
+        {
+            "RenderPipeline" = "UniversalPipeline"
+            "RenderType" = "Opaque"
+        }
 
         Pass
         {
-            ZTest Always
             ZWrite Off
             Cull Off
 
             HLSLPROGRAM
-
-            // Required to compile gles 2.0 with standard srp library
-            #pragma prefer_hlslcc gles
-            #pragma exclude_renderers d3d11_9x
             #pragma vertex Vertex
             #pragma fragment Fragment
 
-            #pragma multi_compile _ _LINEAR_TO_SRGB_CONVERSION
-
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #ifdef _LINEAR_TO_SRGB_CONVERSION
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
-            #endif
 
             struct Attributes
             {
@@ -40,12 +34,13 @@ Shader "Universal Render Pipeline/Post Effetcs/Glitch/Analog"
                 half2 uv : TEXCOORD0;
             };
 
-            TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
 
             float2 _ScanLineJitter; // (displacement, threshold)
-            float2 _VerticalJump;   // (amount, time)
+            float2 _VerticalJump; // (amount, time)
             float _HorizontalShake;
-            float2 _ColorDrift;     // (amount, time)
+            float2 _ColorDrift; // (amount, time)
 
             float nrand(float x, float y)
             {
@@ -62,10 +57,6 @@ Shader "Universal Render Pipeline/Post Effetcs/Glitch/Analog"
 
             half4 Fragment(Varyings i) : SV_Target
             {
-                #if UNITY_UV_STARTS_AT_TOP 
-                i.uv = float2(i.uv.x, 1.0 - i.uv.y); 
-                #endif
-
                 float u = i.uv.x;
                 float v = i.uv.y;
 
@@ -83,18 +74,9 @@ Shader "Universal Render Pipeline/Post Effetcs/Glitch/Analog"
                 float drift = sin(jump + _ColorDrift.y) * _ColorDrift.x;
 
                 half4 src1 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, frac(float2(u + jitter + shake, jump)));
-                #ifdef _LINEAR_TO_SRGB_CONVERSION
-                src1 = LinearToSRGB(src1);
-                #endif
-                
                 half4 src2 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, frac(float2(u + jitter + shake + drift, jump)));
-                #ifdef _LINEAR_TO_SRGB_CONVERSION
-                src2 = LinearToSRGB(src2);
-                #endif
-
                 return half4(src1.r, src2.g, src1.b, 1);
             }
-
             ENDHLSL
         }
     }
